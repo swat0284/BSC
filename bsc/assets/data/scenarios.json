@@ -1,0 +1,568 @@
+[
+  {
+    "title": "Paczka do odebrania",
+    "type": "Phishing SMS",
+    "description": "SMS z linkiem do dopłaty 1,50 zł",
+    "icon": "local_shipping",
+    "simulationType": "sms",
+    "sound": "sms_alert.mp3",
+    "vibration": true,
+    "content": "Twoja paczka została wstrzymana. Dopłać 1,50 zł: http://post24-paczka.xyz",
+    "a11y": {
+      "ttsText": "Przyszedł SMS: Twoja paczka została wstrzymana. Link prowadzi do podejrzanej strony. Nie klikaj. Opcje: 1. Kliknij w link, 2. Zignoruj wiadomość, 3. Prześlij do znajomego.",
+      "audioCaption": "Dźwięk wiadomości SMS",
+      "imageAlt": "Ikona paczki"
+    },
+    "responses": [
+      {
+        "label": "Kliknij w link",
+        "outcome": "phishing_success",
+        "reaction": "niebezpieczna"
+      },
+      {
+        "label": "Zignoruj wiadomość",
+        "outcome": "safe_reaction",
+        "reaction": "bezpieczna"
+      },
+      {
+        "label": "Prześlij do znajomego",
+        "outcome": "spread_scam",
+        "reaction": "współudział"
+      }
+    ],
+    "outcomes": {
+      "phishing_success": {
+        "reaction": "niebezpieczna",
+        "title": "Dałeś się nabrać!",
+        "image": "phishing.png",
+        "imageAlt": "Ostrzegawcza ikona phishingu",
+        "summary": "Kliknięcie w podejrzany link może narazić Cię na utratę pieniędzy.",
+        "advice": "Zawsze sprawdzaj adresy URL i nie klikaj w linki z nieznanych źródeł."
+      },
+      "safe_reaction": {
+        "reaction": "bezpieczna",
+        "title": "Świetna reakcja!",
+        "image": "safe.png",
+        "imageAlt": "Zielony znak akceptacji",
+        "summary": "Zignorowanie podejrzanego SMS-a to najlepsze wyjście.",
+        "advice": "Zawsze zachowuj ostrożność i zgłaszaj takie próby oszustwa."
+      },
+      "spread_scam": {
+        "reaction": "współudział",
+        "title": "Nieświadomy współudział",
+        "image": "spread.png",
+        "imageAlt": "Ikona ostrzegająca przed udostępnianiem",
+        "summary": "Przekazując dalej fałszywą wiadomość pomagasz oszustom.",
+        "advice": "Nigdy nie udostępniaj wiadomości, co do których masz wątpliwości."
+      }
+    }
+  },
+  {
+    "title": "Dzień dobry, dzwonię z banku",
+    "type": "Fałszywe połączenie telefoniczne",
+    "description": "Podszywanie się pod konsultanta bankowego",
+    "icon": "phone_in_talk",
+    "simulationType": "call",
+    "sound": "ringtone.mp3",
+    "vibration": true,
+    "onDeclineOutcome": "safe_reaction",
+    "caller": {
+      "name": "Bank  – Konsultant",
+      "number": "+48 600 123 456",
+      "avatar": "bank_agent.png"
+    },
+    "a11y": {
+      "ttsText": "Połączenie z banku. Konsultant prosi o dane do konta, aby zabezpieczyć transakcję. Bank nigdy nie prosi o dane przez telefon. Opcje: 1. Podaj dane do konta, 2. Rozłącz się, 3. Przekaż telefon bliskiej osobie.",
+      "audioCaption": "Dzwonek telefonu",
+      "imageAlt": "Konsultant bankowy"
+    },
+    "dialogue": "Dzień dobry, tu bank. Potrzebujemy pilnie Pani danych do konta, aby zabezpieczyć transakcję.",
+    "voice": "bank_agent_voice.mp3",
+    "options": [
+      { "text": "Podaj dane do konta", "next": {
+          "prompt": "Konsultant prosi teraz o kod z SMS, aby potwierdzić operację.",
+          "voice": "bank_sms_code.mp3",
+          "choices": [
+            { "text": "Podaj kod z SMS", "outcome": "phishing_success" },
+            { "text": "Powiedz, że oddzwonisz sam na infolinię", "next": {
+                "prompt": "Próbują wywrzeć presję, żebyś nie rozłączał się.",
+                "voice": "bank_pressure.mp3",
+                "choices": [
+                  { "text": "Zakończ rozmowę i oddzwoń sam", "outcome": "safe_reaction" },
+                  { "text": "Przekaż telefon bliskiej osobie", "outcome": "spread_scam" }
+                ]
+            }}
+          ]
+      } },
+      { "text": "Rozłącz się", "outcome": "safe_reaction" },
+      { "text": "Przekaż telefon bliskiej osobie", "outcome": "spread_scam" }
+    ],
+    "outcomes": {
+      "phishing_success": {
+        "reaction": "niebezpieczna",
+        "title": "Uwaga! To była pułapka",
+        "image": "phishing.png",
+        "imageAlt": "Ostrzegawcza ikona phishingu",
+        "summary": "Nigdy nie podawaj danych przez telefon – bank tego nie wymaga.",
+        "advice": "Zawsze weryfikuj połączenie, oddzwaniaj na oficjalny numer banku."
+      },
+      "safe_reaction": {
+        "reaction": "bezpieczna",
+        "title": "Brawo!",
+        "image": "safe.png",
+        "imageAlt": "Zielony znak akceptacji",
+        "summary": "To była dobra reakcja – zakończenie rozmowy uchroniło Cię przed oszustwem.",
+        "advice": "Nie rozmawiaj z podejrzanymi osobami – lepiej dmuchać na zimne."
+      },
+      "spread_scam": {
+        "reaction": "neutralna",
+        "title": "Niepewna sytuacja",
+        "image": "spread.png",
+        "imageAlt": "Ikona telefonu przekazywanego dalej",
+        "summary": "To ostrożne zachowanie, ale najlepiej byłoby samodzielnie rozłączyć się.",
+        "advice": "Bądź asertywny – to Ty kontrolujesz rozmowę."
+      }
+    }
+  },
+  {
+    "title": "Na wnuczka",
+    "type": "Oszustwo rodzinne",
+    "description": "Telefon od rzekomego wnuka",
+    "icon": "family_restroom",
+    "simulationType": "call",
+    "sound": "phone_ring.mp3",
+    "vibration": true,
+    "onDeclineOutcome": "safe_reaction",
+    "caller": {
+      "name": "Kuba – wnuczek",
+      "number": "Ukryty numer",
+      "avatar": "grandson.png"
+    },
+    "a11y": {
+      "ttsText": "Połączenie od osoby podszywającej się pod wnuka. Prosi o szybkie pieniądze, grając na emocjach. Opcje: 1. Zgódź się na przekazanie pieniędzy, 2. Poproś o nazwisko i rozłącz się, 3. Zadzwoń do prawdziwego wnuczka.",
+      "audioCaption": "Dzwonek telefonu",
+      "imageAlt": "Młody mężczyzna rozmawia przez telefon"
+    },
+    "dialogue": "Babciu! Miałem wypadek! Potrzebuję szybko 3000 zł! Pomóż mi, proszę!",
+    "voice": "grandson_voice.mp3",
+    "options": [
+      { "text": "Zgódź się na przekazanie pieniędzy", "next": {
+          "prompt": "Proszą o szybki przelew przez przesłany link.",
+          "voice": "grandson_link.mp3",
+          "choices": [
+            { "text": "Kliknij w link i zapłać", "outcome": "phishing_success" },
+            { "text": "Rozłącz się i zweryfikuj u bliskich", "outcome": "safe_reaction" }
+          ]
+      } },
+      { "text": "Poproś o nazwisko i rozłącz się", "outcome": "safe_reaction" },
+      { "text": "Zadzwoń do prawdziwego wnuczka", "outcome": "spread_scam" }
+    ],
+    "outcomes": {
+      "phishing_success": {
+        "reaction": "niebezpieczna",
+        "title": "Zostałeś oszukany!",
+        "image": "phishing.png",
+        "imageAlt": "Ostrzegawcza ikona phishingu",
+        "summary": "Oszuści często grają na emocjach – nigdy nie przekazuj pieniędzy pod wpływem presji.",
+        "advice": "Zawsze weryfikuj tożsamość dzwoniącego."
+      },
+      "safe_reaction": {
+        "reaction": "bezpieczna",
+        "title": "Świetna czujność!",
+        "image": "safe.png",
+        "imageAlt": "Zielony znak akceptacji",
+        "summary": "Prawidłowa reakcja – warto upewnić się, że dzwoni prawdziwa osoba.",
+        "advice": "Zawsze pytaj o szczegóły i oddzwaniaj samodzielnie."
+      },
+      "spread_scam": {
+        "reaction": "współudział",
+        "title": "Narażasz innych",
+        "image": "spread.png",
+        "imageAlt": "Ikona ostrzegająca przed udostępnianiem",
+        "summary": "Nieświadome przekazanie informacji może pomóc oszustowi.",
+        "advice": "Nie dziel się informacjami bez sprawdzenia źródła."
+      }
+    }
+  },
+  {
+    "title": "Wygrałeś smartfona!",
+    "type": "Fałszywy konkurs",
+    "description": "Strona z fałszywą wygraną",
+    "icon": "card_giftcard",
+    "simulationType": "web",
+    "sound": "notification.mp3",
+    "vibration": true,
+    "content": "Gratulacje! Wygrałeś iPhone’a! Kliknij tutaj, aby odebrać nagrodę: http://iphone-gift.win",
+    "a11y": {
+      "ttsText": "Na stronie pojawił się komunikat o rzekomej wygranej iPhone’a. To próba wyłudzenia danych. Opcje: 1. Kliknij w link, 2. Zamknij stronę, 3. Udostępnij znajomym.",
+      "audioCaption": "Powiadomienie",
+      "imageAlt": "Grafika prezentu i fajerwerków"
+    },
+    "responses": [
+      {
+        "label": "Kliknij w link",
+        "outcome": "phishing_success",
+        "reaction": "niebezpieczna"
+      },
+      {
+        "label": "Zamknij stronę",
+        "outcome": "safe_reaction",
+        "reaction": "bezpieczna"
+      },
+      {
+        "label": "Udostępnij znajomym",
+        "outcome": "spread_scam",
+        "reaction": "współudział"
+      }
+    ],
+    "outcomes": {
+      "phishing_success": {
+        "reaction": "niebezpieczna",
+        "title": "Fałszywa nagroda",
+        "image": "phishing.png",
+        "imageAlt": "Ostrzegawcza ikona phishingu",
+        "summary": "Kliknięcie w fałszywą stronę może skutkować utratą danych.",
+        "advice": "Nie bierz udziału w podejrzanych konkursach."
+      },
+      "safe_reaction": {
+        "reaction": "bezpieczna",
+        "title": "Dobra decyzja",
+        "image": "safe.png",
+        "imageAlt": "Zielony znak akceptacji",
+        "summary": "Zamknięcie podejrzanej strony to bezpieczne zachowanie.",
+        "advice": "Ignoruj nieznane oferty i konkursy."
+      },
+      "spread_scam": {
+        "reaction": "współudział",
+        "title": "Oszustwo rozprzestrzenione",
+        "image": "spread.png",
+        "imageAlt": "Ikona ostrzegająca przed udostępnianiem",
+        "summary": "Udostępniając fałszywą stronę, pomagasz oszustom.",
+        "advice": "Sprawdzaj źródła informacji przed podzieleniem się nimi."
+      }
+    }
+  }
+  ,
+  {
+    "title": "Dopłata do rachunku energii",
+    "type": "Phishing SMS",
+    "description": "Fałszywy SMS o niedopłacie za prąd",
+    "icon": "local_shipping",
+    "simulationType": "sms",
+    "sound": "sms_alert.mp3",
+    "vibration": true,
+    "difficulty": "easy",
+    "weight": 3,
+    "content": "Informujemy o niedopłacie 4,99 zł. Ureguluj należność: http://energia-platnosc.net",
+    "a11y": { "ttsText": "SMS o niedopłacie. Link prowadzi do fałszywej strony płatności." },
+    "responses": [
+      { "label": "Wejdź w link", "next": {
+          "prompt": "Strona prosi o PESEL oraz dane karty.",
+          "sound": "notification.mp3",
+          "hint": "Nigdy nie podawaj danych karty na nieznanych stronach.",
+          "choices": [
+            { "label": "Podaj dane karty", "outcome": "phishing_success" },
+            { "label": "Zamknij stronę i sprawdź w aplikacji dostawcy", "outcome": "safe_reaction" }
+          ]
+      }},
+      { "label": "Zignoruj", "outcome": "safe_reaction" },
+      { "label": "Prześlij znajomym", "outcome": "spread_scam" }
+    ],
+    "outcomes": {
+      "phishing_success": { "reaction": "niebezpieczna", "title": "Wyłudzenie danych", "image": "phishing.png", "imageAlt": "Ostrzeżenie", "summary": "Podałeś dane karty na fałszywej stronie.", "advice": "Płać tylko na oficjalnych stronach operatora." },
+      "safe_reaction": { "reaction": "bezpieczna", "title": "Dobra decyzja", "image": "safe.png", "imageAlt": "OK", "summary": "Zweryfikowanie płatności w oficjalnej aplikacji jest bezpieczne.", "advice": "Zawsze sprawdzaj w aplikacji lub na infolinii." },
+      "spread_scam": { "reaction": "współudział", "title": "Ryzyko dla innych", "image": "spread.png", "imageAlt": "Udostępnianie", "summary": "Przekazując dalej link narażasz innych.", "advice": "Nie udostępniaj niesprawdzonych wiadomości." }
+    }
+  },
+  {
+    "title": "Zwrot podatku 327,50 zł",
+    "type": "Phishing SMS",
+    "description": "Fałszywy zwrot podatku",
+    "icon": "local_shipping",
+    "simulationType": "sms",
+    "sound": "sms_alert.mp3",
+    "vibration": true,
+    "difficulty": "medium",
+    "weight": 2,
+    "content": "Masz do odebrania zwrot podatku 327,50 zł. Kliknij: http://podatki-zwrot.co",
+    "responses": [
+      { "label": "Otwórz link", "next": {
+          "prompt": "Formularz prosi o numer konta i login do banku.",
+          "sound": "notification.mp3",
+          "choices": [
+            { "label": "Podaj login do banku", "outcome": "phishing_success" },
+            { "label": "Zamknij i wejdź na e‑Urząd Skarbowy", "outcome": "safe_reaction" }
+          ]
+      }},
+      { "label": "Usuń wiadomość", "outcome": "safe_reaction" },
+      { "label": "Prześlij dalej", "outcome": "spread_scam" }
+    ],
+    "outcomes": {
+      "phishing_success": { "reaction": "niebezpieczna", "title": "Utrata danych", "image": "phishing.png", "imageAlt": "Ostrzeżenie", "summary": "Podanie loginu bankowego to wysokie ryzyko kradzieży.", "advice": "Sprawy podatkowe załatwiaj wyłącznie przez oficjalny portal." },
+      "safe_reaction": { "reaction": "bezpieczna", "title": "Bezpiecznie", "image": "safe.png", "imageAlt": "OK", "summary": "Zweryfikowałeś sprawę w oficjalnym serwisie.", "advice": "Korzystaj tylko z zaufanych kanałów." },
+      "spread_scam": { "reaction": "współudział", "title": "Uwaga", "image": "spread.png", "imageAlt": "Udostępnianie", "summary": "Udostępniając link narażasz innych na atak.", "advice": "Nie podawaj dalej podejrzanych wiadomości." }
+    }
+  },
+  {
+    "title": "Konto bankowe zablokowane",
+    "type": "Phishing SMS",
+    "description": "SMS o rzekomej blokadzie konta",
+    "icon": "local_shipping",
+    "simulationType": "sms",
+    "sound": "sms_alert.mp3",
+    "vibration": true,
+    "difficulty": "hard",
+    "weight": 1,
+    "content": "Twoje konto zostało zablokowane. Odblokuj natychmiast: http://bank-verify.info",
+    "responses": [
+      { "label": "Wejdź i odblokuj", "next": {
+          "prompt": "Strona prosi o login, hasło i kod z SMS.",
+          "sound": "notification.mp3",
+          "hint": "Bank nie prosi o kod do logowania na zewnętrznych stronach.",
+          "choices": [
+            { "label": "Podaj dane i kod", "outcome": "phishing_success" },
+            { "label": "Zadzwoń sam na infolinię banku", "outcome": "safe_reaction" }
+          ]
+      }},
+      { "label": "Zignoruj i sprawdź w aplikacji", "outcome": "safe_reaction" }
+    ],
+    "outcomes": {
+      "phishing_success": { "reaction": "niebezpieczna", "title": "Przejęcie konta", "image": "phishing.png", "summary": "Przekazanie kodu SMS umożliwia kradzież środków.", "advice": "Nigdy nie podawaj kodów z SMS." },
+      "safe_reaction": { "reaction": "bezpieczna", "title": "Właściwie", "image": "safe.png", "summary": "Samodzielne połączenie z bankiem to najlepsza weryfikacja.", "advice": "Zawsze kontaktuj się na oficjalny numer." }
+    }
+  },
+  {
+    "title": "Paczka zatrzymana na cle",
+    "type": "Phishing SMS",
+    "description": "SMS o opłacie celnej",
+    "icon": "local_shipping",
+    "simulationType": "sms",
+    "sound": "sms_alert.mp3",
+    "vibration": true,
+    "difficulty": "easy",
+    "weight": 2,
+    "content": "Twoja przesyłka zatrzymana na cle. Dopłać 2,80 zł: http://paczka‑oplata.eu",
+    "responses": [
+      { "label": "Zapłać", "outcome": "phishing_success" },
+      { "label": "Sprawdź numer przesyłki na oficjalnej stronie", "outcome": "safe_reaction" },
+      { "label": "Prześlij dalej", "outcome": "spread_scam" }
+    ],
+    "outcomes": {
+      "phishing_success": { "reaction": "niebezpieczna", "title": "Podejrzana opłata", "image": "phishing.png", "summary": "Dopłata to próba wyłudzenia.", "advice": "Sprawdzaj przesyłki tylko po numerze na stronie przewoźnika." },
+      "safe_reaction": { "reaction": "bezpieczna", "title": "Bezpiecznie", "image": "safe.png", "summary": "Zweryfikowałeś status paczki oficjalnie.", "advice": "Nie klikaj w nieznane linki." },
+      "spread_scam": { "reaction": "współudział", "title": "Uważaj", "image": "spread.png", "summary": "Udostępnianie linku pomaga oszustom.", "advice": "Nie udostępniaj podejrzanych wiadomości." }
+    }
+  },
+  {
+    "title": "Wsparcie techniczne Microsoft",
+    "type": "Fałszywe połączenie telefoniczne",
+    "description": "Oszust prosi o zdalny dostęp",
+    "icon": "phone_in_talk",
+    "simulationType": "call",
+    "sound": "ringtone.mp3",
+    "voice": "it_support_intro.mp3",
+    "vibration": true,
+    "difficulty": "medium",
+    "weight": 2,
+    "dialogue": "Zauważyliśmy wirusa na Pani komputerze. Proszę zainstalować program do zdalnej pomocy.",
+    "options": [
+      { "text": "Zainstaluj program i podaj kod", "outcome": "phishing_success" },
+      { "text": "Zapytaj o szczegóły i powiedz, że oddzwonisz", "next": {
+          "prompt": "Rozmówca naciska na natychmiastowe działanie.",
+          "voice": "it_support_pressure.mp3",
+          "choices": [
+            { "text": "Zakończ rozmowę", "outcome": "safe_reaction" },
+            { "text": "Przekaż telefon bliskiej osobie", "outcome": "spread_scam" }
+          ]
+      }}
+    ],
+    "outcomes": {
+      "phishing_success": { "reaction": "niebezpieczna", "title": "Utrata kontroli", "image": "phishing.png", "summary": "Zdalny dostęp pozwala przejąć Twoje urządzenie.", "advice": "Nigdy nie dawaj zdalnego dostępu nieznajomym." },
+      "safe_reaction": { "reaction": "bezpieczna", "title": "Dobrze", "image": "safe.png", "summary": "Zakończenie rozmowy chroni przed oszustwem.", "advice": "W razie wątpliwości skonsultuj się z bliskimi." },
+      "spread_scam": { "reaction": "neutralna", "title": "Niepewnie", "image": "spread.png", "summary": "Lepiej samemu zakończyć rozmowę.", "advice": "Bądź asertywny wobec nacisków." }
+    }
+  },
+  {
+    "title": "Policja: ostrzeżenie przed oszustwem",
+    "type": "Fałszywe połączenie telefoniczne",
+    "description": "Podszywanie się pod policjanta",
+    "icon": "phone_in_talk",
+    "simulationType": "call",
+    "sound": "ringtone.mp3",
+    "voice": "police_intro.mp3",
+    "vibration": true,
+    "difficulty": "hard",
+    "weight": 1,
+    "dialogue": "Pani konto jest zagrożone. Proszę podać dane do logowania, aby zabezpieczyć środki.",
+    "options": [
+      { "text": "Podaj dane do konta", "outcome": "phishing_success" },
+      { "text": "Zakończ i zadzwoń na komisariat", "outcome": "safe_reaction" },
+      { "text": "Przekaż telefon bliskiej osobie", "outcome": "spread_scam" }
+    ],
+    "outcomes": {
+      "phishing_success": { "reaction": "niebezpieczna", "title": "Oszust policyjny", "image": "phishing.png", "summary": "Prawdziwa policja nie prosi o dane logowania.", "advice": "Zawsze weryfikuj połączenia samodzielnie." },
+      "safe_reaction": { "reaction": "bezpieczna", "title": "Świetnie", "image": "safe.png", "summary": "Samodzielne połączenie na komisariat to dobry krok.", "advice": "Korzystaj z oficjalnych numerów." },
+      "spread_scam": { "reaction": "neutralna", "title": "Umiarkowanie", "image": "spread.png", "summary": "Lepiej samemu zweryfikować sprawę.", "advice": "Zakończ rozmowę i zadzwoń na komisariat." }
+    }
+  },
+  {
+    "title": "Dostawca internetu – rzekoma zaległość",
+    "type": "Fałszywe połączenie telefoniczne",
+    "description": "Windykacja na telefon",
+    "icon": "phone_in_talk",
+    "simulationType": "call",
+    "sound": "ringtone.mp3",
+    "voice": "isp_intro.mp3",
+    "vibration": true,
+    "difficulty": "easy",
+    "weight": 2,
+    "dialogue": "Prosimy o natychmiastową płatność, inaczej odłączymy internet.",
+    "options": [
+      { "text": "Podaj dane karty", "outcome": "phishing_success" },
+      { "text": "Poproś o fakturę mailowo", "next": {
+          "prompt": "Rozmówca odmawia wysłania dokumentów i naciska.",
+          "voice": "isp_pressure.mp3",
+          "choices": [
+            { "text": "Zakończ rozmowę i sprawdź w panelu klienta", "outcome": "safe_reaction" },
+            { "text": "Przekaż telefon bliskiej osobie", "outcome": "spread_scam" }
+          ]
+      }}
+    ],
+    "outcomes": {
+      "phishing_success": { "reaction": "niebezpieczna", "title": "Wyłudzenie", "image": "phishing.png", "summary": "Nigdy nie podawaj danych karty przez telefon.", "advice": "Płatności rób tylko w panelu klienta." },
+      "safe_reaction": { "reaction": "bezpieczna", "title": "OK", "image": "safe.png", "summary": "Weryfikacja w panelu to bezpieczny wybór.", "advice": "Omijaj pośpiech i presję rozmówców." },
+      "spread_scam": { "reaction": "neutralna", "title": "Uwaga", "image": "spread.png", "summary": "Lepiej samodzielnie zakończyć rozmowę.", "advice": "Zawsze zachowuj czujność." }
+    }
+  },
+  {
+    "title": "Logowanie do portalu społecznościowego",
+    "type": "Fałszywa strona logowania",
+    "description": "Strona podszywa się pod znany portal",
+    "icon": "card_giftcard",
+    "simulationType": "web",
+    "sound": "notification.mp3",
+    "vibration": true,
+    "difficulty": "medium",
+    "weight": 2,
+    "content": "Twoja sesja wygasła. Zaloguj się ponownie: http://social-login.app",
+    "responses": [
+      { "label": "Zaloguj się", "next": {
+          "prompt": "Formularz wygląda podobnie, ale adres jest inny.",
+          "sound": "notification.mp3",
+          "hint": "Sprawdź kłódkę i pełny adres strony.",
+          "choices": [
+            { "label": "Podaj login i hasło", "outcome": "phishing_success" },
+            { "label": "Przerwij i wejdź przez aplikację", "outcome": "safe_reaction" }
+          ]
+      }},
+      { "label": "Zamknij", "outcome": "safe_reaction" }
+    ],
+    "outcomes": {
+      "phishing_success": { "reaction": "niebezpieczna", "title": "Wyłudzenie haseł", "image": "phishing.png", "summary": "Podałeś hasło na fałszywej stronie.", "advice": "Zawsze korzystaj z oficjalnej aplikacji." },
+      "safe_reaction": { "reaction": "bezpieczna", "title": "Bezpiecznie", "image": "safe.png", "summary": "Zalogowałeś się oficjalnym kanałem.", "advice": "Sprawdzaj adresy i certyfikaty." }
+    }
+  },
+  {
+    "title": "Voucher do supermarketu",
+    "type": "Fałszywy konkurs",
+    "description": "Strona z rzekomym voucherem",
+    "icon": "card_giftcard",
+    "simulationType": "web",
+    "sound": "notification.mp3",
+    "vibration": true,
+    "difficulty": "easy",
+    "weight": 3,
+    "content": "Gratulacje! Zdobądź voucher 500 zł. Dokończ ankietę: http://market-voucher.win",
+    "responses": [
+      { "label": "Wypełnij ankietę", "next": {
+          "prompt": "Na końcu proszą o opłatę 3 zł oraz dane karty.",
+          "sound": "notification.mp3",
+          "choices": [
+            { "label": "Podaj dane karty", "outcome": "phishing_success" },
+            { "label": "Zamknij stronę", "outcome": "safe_reaction" }
+          ]
+      }},
+      { "label": "Udostępnij znajomym", "outcome": "spread_scam" }
+    ],
+    "outcomes": {
+      "phishing_success": { "reaction": "niebezpieczna", "title": "Wyłudzenie płatności", "image": "phishing.png", "summary": "Opłata za voucher to oszustwo.", "advice": "Ignoruj takie oferty." },
+      "safe_reaction": { "reaction": "bezpieczna", "title": "Dobrze", "image": "safe.png", "summary": "Zamknięcie strony przerwało oszustwo.", "advice": "Zachowuj sceptycyzm wobec " },
+      "spread_scam": { "reaction": "współudział", "title": "Ryzyko", "image": "spread.png", "summary": "Udostępnianie oszustwa szkodzi innym.", "advice": "Nie przesyłaj dalej." }
+    }
+  },
+  {
+    "title": "Antywirus – odnowienie subskrypcji",
+    "type": "Fałszywe powiadomienie",
+    "description": "Strona straszy wygaśnięciem licencji",
+    "icon": "card_giftcard",
+    "simulationType": "web",
+    "sound": "notification.mp3",
+    "vibration": true,
+    "difficulty": "medium",
+    "weight": 2,
+    "content": "Twoja licencja wygasła. Odnów teraz i chroń urządzenie: http://anty‑renew.info",
+    "responses": [
+      { "label": "Odnów teraz", "next": {
+          "prompt": "Formularz prosi o numer karty i kod CVV.",
+          "choices": [
+            { "label": "Podaj dane karty", "outcome": "phishing_success" },
+            { "label": "Zamknij i sprawdź w aplikacji antywirusa", "outcome": "safe_reaction" }
+          ]
+      }},
+      { "label": "Zamknij", "outcome": "safe_reaction" }
+    ],
+    "outcomes": {
+      "phishing_success": { "reaction": "niebezpieczna", "title": "Wyłudzenie", "image": "phishing.png", "summary": "Fałszywa strona próbuje pobrać opłatę.", "advice": "Odnowienia dokonuj tylko w aplikacji producenta." },
+      "safe_reaction": { "reaction": "bezpieczna", "title": "Bezpiecznie", "image": "safe.png", "summary": "Zweryfikowałeś status licencji oficjalnie.", "advice": "Używaj oficjalnych kanałów płatności." }
+    }
+  },
+  {
+    "title": "Komunikator – znajomy prosi o przelew",
+    "type": "Phishing SMS",
+    "description": "Podszywanie się pod znajomego",
+    "icon": "local_shipping",
+    "simulationType": "sms",
+    "sound": "sms_alert.mp3",
+    "vibration": true,
+    "difficulty": "medium",
+    "weight": 2,
+    "content": "Cześć! To ja, zmieniłem numer. Pożycz 200 zł i wyślij BLIK: http://szybki‑blik.co",
+    "responses": [
+      { "label": "Wyślij kod BLIK", "outcome": "phishing_success" },
+      { "label": "Zadzwoń na stary numer i potwierdź", "outcome": "safe_reaction" },
+      { "label": "Prześlij dalej", "outcome": "spread_scam" }
+    ],
+    "outcomes": {
+      "phishing_success": { "reaction": "niebezpieczna", "title": "Utrata środków", "image": "phishing.png", "summary": "Podanie kodu BLIK to natychmiastowa strata pieniędzy.", "advice": "Zawsze weryfikuj wiadomości od znajomych." },
+      "safe_reaction": { "reaction": "bezpieczna", "title": "Super czujność", "image": "safe.png", "summary": "Telefon do znajomego potwierdza tożsamość.", "advice": "Nie ufaj prośbom o szybkie przelewy." },
+      "spread_scam": { "reaction": "współudział", "title": "Ryzyko", "image": "spread.png", "summary": "Udostępnianie nie pomaga.", "advice": "Zachowaj ostrożność." }
+    }
+  },
+  {
+    "title": "Ankieta bankowa – nagroda",
+    "type": "Fałszywa ankieta",
+    "description": "Ankieta z obietnicą nagrody",
+    "icon": "card_giftcard",
+    "simulationType": "web",
+    "sound": "notification.mp3",
+    "vibration": true,
+    "difficulty": "easy",
+    "weight": 2,
+    "content": "Wypełnij ankietę bankową i odbierz 200 zł: http://ankieta‑bonus.net",
+    "responses": [
+      { "label": "Wypełnij", "next": {
+          "prompt": "Na końcu proszą o login do banku.",
+          "choices": [
+            { "label": "Podaj login", "outcome": "phishing_success" },
+            { "label": "Zamknij", "outcome": "safe_reaction" }
+          ]
+      }},
+      { "label": "Udostępnij", "outcome": "spread_scam" }
+    ],
+    "outcomes": {
+      "phishing_success": { "reaction": "niebezpieczna", "title": "Utrata danych", "image": "phishing.png", "summary": "Ankieta to tylko pretekst do wyłudzenia.", "advice": "Nie podawaj danych w ankietach z nagrodami." },
+      "safe_reaction": { "reaction": "bezpieczna", "title": "Dobrze", "image": "safe.png", "summary": "Zamknięcie strony przerwało próbę oszustwa.", "advice": "Ignoruj takie propozycje." },
+      "spread_scam": { "reaction": "współudział", "title": "Ostrożnie", "image": "spread.png", "summary": "Udostępniając, narażasz innych.", "advice": "Nie rozpowszechniaj linków." }
+    }
+  }
+]
