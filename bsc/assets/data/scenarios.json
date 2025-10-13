@@ -146,14 +146,7 @@
     "dialogue": "Babciu! Miałem wypadek! Potrzebuję szybko 3000 zł! Pomóż mi, proszę!",
     "voice": "grandson_voice.mp3",
     "options": [
-      { "text": "Zgódź się na przekazanie pieniędzy", "next": {
-          "prompt": "Proszą o szybki przelew przez przesłany link.",
-          "voice": "grandson_link.mp3",
-          "choices": [
-            { "text": "Kliknij w link i zapłać", "outcome": "phishing_success" },
-            { "text": "Rozłącz się i zweryfikuj u bliskich", "outcome": "safe_reaction" }
-          ]
-      } },
+      { "text": "Zgódź się na przekazanie pieniędzy", "outcome": "phishing_success" },
       { "text": "Poproś o nazwisko i rozłącz się", "outcome": "safe_reaction" },
       { "text": "Zadzwoń do prawdziwego wnuczka", "outcome": "spread_scam" }
     ],
@@ -192,6 +185,8 @@
     "simulationType": "web",
     "sound": "notification.mp3",
     "vibration": true,
+    "pageImage": "phoneAd.png",
+    "pageImageAlt": "Fałszywa reklama wygranej smartfona",
     "content": "Gratulacje! Wygrałeś iPhone’a! Kliknij tutaj, aby odebrać nagrodę: http://iphone-gift.win",
     "a11y": {
       "ttsText": "Na stronie pojawił się komunikat o rzekomej wygranej iPhone’a. To próba wyłudzenia danych. Opcje: 1. Kliknij w link, 2. Zamknij stronę, 3. Udostępnij znajomym.",
@@ -360,7 +355,7 @@
     "icon": "phone_in_talk",
     "simulationType": "call",
     "sound": "ringtone.mp3",
-    "voice": "it_support_intro.mp3",
+    "voice": "ITScam.mp3",
     "vibration": true,
     "difficulty": "medium",
     "weight": 2,
@@ -444,17 +439,11 @@
     "vibration": true,
     "difficulty": "medium",
     "weight": 2,
+    "pageImage": "socialLogin.png",
+    "pageImageAlt": "Zrzut fałszywej strony logowania",
     "content": "Twoja sesja wygasła. Zaloguj się ponownie: http://social-login.app",
     "responses": [
-      { "label": "Zaloguj się", "next": {
-          "prompt": "Formularz wygląda podobnie, ale adres jest inny.",
-          "sound": "notification.mp3",
-          "hint": "Sprawdź kłódkę i pełny adres strony.",
-          "choices": [
-            { "label": "Podaj login i hasło", "outcome": "phishing_success" },
-            { "label": "Przerwij i wejdź przez aplikację", "outcome": "safe_reaction" }
-          ]
-      }},
+      { "label": "Zaloguj się", "outcome": "phishing_success" },
       { "label": "Zamknij", "outcome": "safe_reaction" }
     ],
     "outcomes": {
@@ -548,6 +537,8 @@
     "vibration": true,
     "difficulty": "easy",
     "weight": 2,
+    "pageImage": "bankScam.png",
+    "pageImageAlt": "Fałszywa ankieta bankowa z obietnicą nagrody",
     "content": "Wypełnij ankietę bankową i odbierz 200 zł: http://ankieta‑bonus.net",
     "responses": [
       { "label": "Wypełnij", "next": {
