@@ -1,8 +1,13 @@
 import 'package:flutter/material.dart';
 import 'scenario.dart';
+import 'simulation.dart';
+import 'package:flutter/services.dart';
+import '../click_sounds.dart';
+import '../haptics.dart';
 import 'simulation_mode.dart';
 import 'settings.dart';
 import 'about.dart';
+import 'stats.dart';
 
 class MenuScreen extends StatelessWidget {
   const MenuScreen({super.key});
@@ -16,7 +21,7 @@ class MenuScreen extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(
           image: DecorationImage(
-            image: AssetImage('assets/images/background.webp'),
+            image: AssetImage('assets/images/background.png'),
             fit: BoxFit.cover,
             alignment: Alignment.center,
           ),
@@ -50,10 +55,35 @@ class MenuScreen extends StatelessWidget {
                         icon: Icons.school,
                         color: tileColor,
                         textColor: textColor,
+                        onTap: () async {
+                          try {
+                            final jsonStr = await rootBundle.loadString('assets/data/scenarios.json');
+                            final scenarios = Scenario.listFromJsonString(jsonStr);
+                            if (!context.mounted) return;
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => SimulationScreen(scenarios: scenarios),
+                              ),
+                            );
+                          } catch (_) {
+                            if (!context.mounted) return;
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Nie udało się wczytać scenariuszy')),
+                            );
+                          }
+                        },
+                      ),
+                      _buildMenuTile(
+                        context,
+                        title: "Statystyki",
+                        icon: Icons.insights,
+                        color: tileColor,
+                        textColor: textColor,
                         onTap: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (_) => const ScenarioScreen()),
+                            MaterialPageRoute(builder: (_) => const StatsScreen()),
                           );
                         },
                       ),
@@ -116,7 +146,7 @@ class MenuScreen extends StatelessWidget {
     required VoidCallback onTap,
   }) {
     return InkWell(
-      onTap: onTap,
+      onTap: () { ClickSounds.play(); Haptics.tap(context); onTap(); },
       borderRadius: BorderRadius.circular(20),
       child: Container(
         decoration: BoxDecoration(

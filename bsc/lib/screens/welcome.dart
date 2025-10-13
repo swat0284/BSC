@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'menu.dart';
+import '../click_sounds.dart';
+import '../haptics.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
@@ -62,6 +64,8 @@ class WelcomeScreen extends StatelessWidget {
                     shadowColor: Colors.black54,
                   ),
                   onPressed: () {
+                    ClickSounds.play();
+                    Haptics.tap(context);
                     Navigator.push(
                       context,
                       MaterialPageRoute(builder: (_) => const MenuScreen()),

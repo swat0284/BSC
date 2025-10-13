@@ -1,129 +1,83 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
-import 'simulation.dart';
 
-class ScenarioScreen extends StatelessWidget {
-  const ScenarioScreen({super.key});
 
-  Future<List<Map<String, dynamic>>> loadScenarios() async {
-    final String jsonString = await rootBundle.loadString('assets/data/scenarios.json');
-    final List<dynamic> jsonList = json.decode(jsonString);
-    return List<Map<String, dynamic>>.from(jsonList);
-  }
+class Scenario {
+final String title;
+final String type;
+final String description;
+final String icon;
+final String simulationType; // 'sms' | 'call' | 'web'
+final String? sound;
+final bool vibration;
+final String? content; // sms/web treść
+final String? pageImage; // web: obrazek strony zamiast tekstu
+final String? pageImageAlt;
+final Map<String, dynamic>? a11y;
+final Map<String, dynamic>? caller; // call
+final String? dialogue; // call
+final String? voice; // call spoken audio filename (e.g., mp3)
+final String? onDeclineOutcome; // call
+final List<Map<String, dynamic>> choices; // unified: from responses | options
+final Map<String, dynamic> outcomes;
+final String? difficulty; // 'easy'|'medium'|'hard'
+final int weight; // for weighted random, default 1
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF5F0E3),
-      appBar: AppBar(
-        title: const Text("Wybierz scenariusz"),
-        backgroundColor: const Color(0xFFD4B483),
-        elevation: 0,
-      ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: loadScenarios(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(child: Text("Błąd wczytywania danych"));
-          } else {
-            final scenarios = snapshot.data!;
-            return ListView.separated(
-              padding: const EdgeInsets.all(16),
-              itemCount: scenarios.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 16),
-              itemBuilder: (context, index) {
-                final item = scenarios[index];
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => SimulationScreen(scenario: item),
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFD4B483),
-                      borderRadius: BorderRadius.circular(16),
-                      boxShadow: const [
-                        BoxShadow(
-                          color: Colors.black26,
-                          blurRadius: 6,
-                          offset: Offset(2, 2),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          _getIcon(item['icon']),
-                          size: 36,
-                          color: Colors.black87,
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                item['title'],
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                item['type'],
-                                style: const TextStyle(
-                                  fontSize: 16,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                item['description'],
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const Icon(Icons.arrow_forward_ios, color: Colors.black54),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
-          }
-        },
-      ),
-    );
-  }
 
-  IconData _getIcon(String? iconName) {
-    switch (iconName) {
-      case 'local_shipping':
-        return Icons.local_shipping;
-      case 'phone_in_talk':
-        return Icons.phone_in_talk;
-      case 'family_restroom':
-        return Icons.family_restroom;
-      case 'card_giftcard':
-        return Icons.card_giftcard;
-      case 'message':
-        return Icons.message;
-      default:
-        return Icons.warning;
-    }
-  }
+Scenario({
+required this.title,
+required this.type,
+required this.description,
+required this.icon,
+required this.simulationType,
+this.sound,
+required this.vibration,
+this.content,
+this.pageImage,
+this.pageImageAlt,
+this.a11y,
+this.caller,
+this.dialogue,
+this.voice,
+this.onDeclineOutcome,
+required this.choices,
+required this.outcomes,
+this.difficulty,
+this.weight = 1,
+});
+
+
+factory Scenario.fromJson(Map<String, dynamic> j) {
+// unify choices from either 'responses' (sms/web) or 'options' (call)
+final raw = (j['responses'] ?? j['options']) as List?;
+final choices = raw?.map((e) => Map<String, dynamic>.from(e)).toList() ?? <Map<String, dynamic>>[];
+
+
+return Scenario(
+title: j['title'] ?? '',
+type: j['type'] ?? '',
+description: j['description'] ?? '',
+icon: j['icon'] ?? 'info',
+simulationType: j['simulationType'] ?? 'sms',
+sound: j['sound'],
+vibration: (j['vibration'] == true),
+content: j['content'],
+pageImage: j['pageImage'] ?? j['webImage'],
+pageImageAlt: j['pageImageAlt'] ?? j['webImageAlt'],
+a11y: j['a11y'] != null ? Map<String, dynamic>.from(j['a11y']) : null,
+caller: j['caller'] != null ? Map<String, dynamic>.from(j['caller']) : null,
+dialogue: j['dialogue'],
+voice: j['voice'] ?? j['dialogueSound'],
+onDeclineOutcome: j['onDeclineOutcome'],
+choices: choices,
+outcomes: Map<String, dynamic>.from(j['outcomes'] ?? {}),
+difficulty: j['difficulty'],
+weight: (j['weight'] is int) ? j['weight'] as int : 1,
+);
+}
+
+
+static List<Scenario> listFromJsonString(String jsonStr) {
+final arr = json.decode(jsonStr) as List<dynamic>;
+return arr.map((e) => Scenario.fromJson(Map<String, dynamic>.from(e))).toList();
+}
 }

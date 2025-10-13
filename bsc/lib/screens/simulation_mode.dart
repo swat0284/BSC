@@ -1,103 +1,175 @@
-import 'dart:convert';
-import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart' show rootBundle;
+import 'package:flutter/services.dart';
+import 'dart:math';
 import 'scenario.dart';
-import 'simulation.dart';
+import 'scenario_detail.dart';
+import '../haptics.dart';
 
-class SimulationModeScreen extends StatelessWidget {
-  const SimulationModeScreen({super.key});
+class SimulationModeBadge extends StatelessWidget {
+  final String simulationType;
+  const SimulationModeBadge({super.key, required this.simulationType});
 
-  Future<List<Map<String, dynamic>>> loadScenarios() async {
-    final String jsonString = await rootBundle.loadString('assets/data/scenarios.json');
-    final List<dynamic> jsonList = json.decode(jsonString);
-    return List<Map<String, dynamic>>.from(jsonList);
+  @override
+  Widget build(BuildContext context) {
+    final (label, color, icon) = _dataFor(simulationType);
+    return Chip(
+      avatar: Icon(icon, size: 18, color: Colors.white),
+      label: Text(label, style: const TextStyle(color: Colors.white)),
+      backgroundColor: color,
+    );
   }
 
-  void _startRandomScenario(BuildContext context, List<Map<String, dynamic>> scenarios) {
-    final random = Random();
-    final scenario = scenarios[random.nextInt(scenarios.length)];
+  (String, Color, IconData) _dataFor(String t) {
+    switch (t) {
+      case 'sms':
+        return ('SMS', Colors.blue, Icons.sms);
+      case 'call':
+        return ('CALL', Colors.green, Icons.call);
+      case 'web':
+        return ('WEB', Colors.orange, Icons.language);
+      default:
+        return ('?', Colors.grey, Icons.help_outline);
+    }
+  }
+}
 
+class SimulationModeScreen extends StatefulWidget {
+  const SimulationModeScreen({super.key});
+
+  @override
+  State<SimulationModeScreen> createState() => _SimulationModeScreenState();
+}
+
+class _SimulationModeScreenState extends State<SimulationModeScreen> {
+  List<Scenario>? _scenarios;
+  bool _loading = true;
+  String? _error;
+  String _difficulty = 'all'; // all|easy|medium|hard
+  bool _autoStarted = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final jsonStr = await rootBundle.loadString('assets/data/scenarios.json');
+      final list = Scenario.listFromJsonString(jsonStr);
+      setState(() {
+        _scenarios = list;
+        _loading = false;
+      });
+      _maybeAutoStart();
+    } catch (e) {
+      setState(() {
+        _error = 'Nie udało się wczytać scenariuszy';
+        _loading = false;
+      });
+    }
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _maybeAutoStart();
+  }
+
+  void _maybeAutoStart() {
+    if (_autoStarted) return;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    final auto = (args is Map && args['autoStart'] == true);
+    if (auto && !_loading && (_scenarios?.isNotEmpty ?? false)) {
+      _autoStarted = true;
+      Future.microtask(_startRandom);
+    }
+  }
+
+  void _startRandom() {
+    final list = _filtered();
+    if (list.isEmpty) return;
+    final rnd = Random();
+    final totalWeight = list.fold<int>(0, (sum, s) => sum + (s.weight <= 0 ? 1 : s.weight));
+    var pick = rnd.nextInt(totalWeight) + 1;
+    Scenario picked = list.first;
+    for (final s in list) {
+      pick -= (s.weight <= 0 ? 1 : s.weight);
+      if (pick <= 0) { picked = s; break; }
+    }
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (_) => SimulationScreen(scenario: scenario)),
+      MaterialPageRoute(builder: (_) => ScenarioDetail(scenario: picked, fromRandom: true)),
     );
+  }
+
+  List<Scenario> _filtered() {
+    final list = _scenarios ?? const <Scenario>[];
+    if (_difficulty == 'all') return list;
+    return list.where((s) => (s.difficulty ?? 'medium') == _difficulty).toList();
   }
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F0E3),
-      appBar: AppBar(
-        title: const Text("Tryb pokazowy"),
-        backgroundColor: const Color(0xFFD4B483),
-        elevation: 0,
-      ),
-      body: FutureBuilder<List<Map<String, dynamic>>>(
-        future: loadScenarios(),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError || !snapshot.hasData) {
-            return const Center(child: Text("Błąd wczytywania scenariuszy"));
-          } else {
-            final scenarios = snapshot.data!;
-            return Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  _buildButton(
-                    icon: Icons.shuffle,
-                    label: "Losowy scenariusz",
-                    onTap: () => _startRandomScenario(context, scenarios),
-                  ),
-                  const SizedBox(height: 20),
-                  _buildButton(
-                    icon: Icons.list_alt,
-                    label: "Wybierz scenariusz",
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const ScenarioScreen()),
-                      );
-                    },
-                  ),
-                ],
-              ),
-            );
-          }
-        },
-      ),
-    );
-  }
-
-  Widget _buildButton({required IconData icon, required String label, required VoidCallback onTap}) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 24, horizontal: 16),
-        decoration: BoxDecoration(
-          color: const Color(0xFFD4B483),
-          borderRadius: BorderRadius.circular(16),
-          boxShadow: const [BoxShadow(color: Colors.black26, blurRadius: 6, offset: Offset(2, 2))],
-        ),
-        child: Row(
-          children: [
-            Icon(icon, size: 32, color: Colors.black87),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black87,
-                ),
-              ),
-            ),
-            const Icon(Icons.arrow_forward_ios, size: 20, color: Colors.black54),
-          ],
+      appBar: AppBar(title: const Text('Tryb symulacyjny')),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: _loading
+              ? const CircularProgressIndicator()
+              : (_error != null)
+                  ? Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(_error!, style: theme.textTheme.bodyMedium),
+                        const SizedBox(height: 12),
+                        ElevatedButton(
+                          onPressed: () { Haptics.tap(context); _load(); },
+                          child: const Text('Spróbuj ponownie'),
+                        ),
+                      ],
+                    )
+                  : Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Text(
+                          'Losowa symulacja',
+                          style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Wciśnij przycisk poniżej, by uruchomić losowy scenariusz.',
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Text('Poziom trudności: '),
+                            const SizedBox(width: 8),
+                            DropdownButton<String>(
+                              value: _difficulty,
+                              items: const [
+                                DropdownMenuItem(value: 'all', child: Text('Wszystkie')),
+                                DropdownMenuItem(value: 'easy', child: Text('Łatwe')),
+                                DropdownMenuItem(value: 'medium', child: Text('Średnie')),
+                                DropdownMenuItem(value: 'hard', child: Text('Trudne')),
+                              ],
+                              onChanged: (v) => setState(() => _difficulty = v ?? 'all'),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () { Haptics.tap(context); _startRandom(); },
+                          icon: const Icon(Icons.casino),
+                          label: const Text('Start losowej symulacji'),
+                          style: ElevatedButton.styleFrom(minimumSize: const Size(260, 56)),
+                        ),
+                      ],
+                    ),
         ),
       ),
     );

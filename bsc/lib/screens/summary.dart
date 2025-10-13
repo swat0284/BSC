@@ -1,85 +1,117 @@
 import 'package:flutter/material.dart';
+import 'package:audioplayers/audioplayers.dart';
+import '../click_sounds.dart';
+import '../haptics.dart';
 
-class SummaryScreen extends StatelessWidget {
-  final String title;
-  final String? outcome;
-  final Map<String, dynamic>? scenario;
+class SummaryScreen extends StatefulWidget {
+  final Map<String, dynamic> outcome;
+  final bool suggestRandom;
+  const SummaryScreen({super.key, required this.outcome, this.suggestRandom = false});
 
-  const SummaryScreen({
-    super.key,
-    required this.title,
-    this.outcome,
-    this.scenario,
-  });
+  @override
+  State<SummaryScreen> createState() => _SummaryScreenState();
+}
 
-  Color _reactionColor(String reaction) {
+class _SummaryScreenState extends State<SummaryScreen> {
+  late final AudioPlayer _player;
+
+  @override
+  void initState() {
+    super.initState();
+    _player = AudioPlayer();
+    _playOutcomeSound();
+  }
+
+  Future<void> _playOutcomeSound() async {
+    try {
+      final o = widget.outcome;
+      final explicit = o['sound']?.toString();
+      final reaction = o['reaction']?.toString() ?? '';
+      final file = explicit ?? _defaultSoundForReaction(reaction);
+      if (file.isEmpty) return;
+      _player.setReleaseMode(ReleaseMode.stop);
+      await _player.play(AssetSource('audio/$file'));
+      if (!mounted) return;
+      Haptics.outcome(context, reaction);
+    } catch (_) {
+      // brak pliku lub inny błąd — ignorujemy
+    }
+  }
+
+  String _defaultSoundForReaction(String reaction) {
     switch (reaction) {
       case 'bezpieczna':
-        return const Color.fromRGBO(83, 166, 58,1);
+        return 'end_success.mp3';
       case 'niebezpieczna':
-        return const Color.fromRGBO(203, 58, 41, 1);
+        return 'end_warning.mp3';
       case 'współudział':
-        return const Color.fromRGBO(252, 200, 75, 1);
+      case 'neutralna':
       default:
-        return Colors.grey.shade200;
+        return 'end_neutral.mp3';
     }
   }
 
   @override
+  void dispose() {
+    _player.stop();
+    _player.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final outcomeData = scenario?['outcomes']?[outcome] ?? {};
-    final reactionType = outcomeData['reaction'] ?? 'brak';
-    final reactionTitle = outcomeData['title'] ?? 'Podsumowanie';
-    final summary = outcomeData['summary'] ?? 'Brak opisu.';
-    final advice = outcomeData['advice'] ?? 'Brak porady.';
-    final image = outcomeData['image'];
+    final title = widget.outcome['title']?.toString() ?? 'Podsumowanie';
+    final summary = widget.outcome['summary']?.toString() ?? '';
+    final advice = widget.outcome['advice']?.toString() ?? '';
+    final image = widget.outcome['image']?.toString();
+    final imageAlt = widget.outcome['imageAlt']?.toString() ?? '';
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text("Podsumowanie: $title"),
-        backgroundColor: const Color(0xFFD4B483),
-      ),
-      body: Container(
-        padding: const EdgeInsets.all(24),
-        color: _reactionColor(reactionType),
+      appBar: AppBar(title: Text(title)),
+      body: Padding(
+        padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (image != null)
               Center(
-                child: Image.asset(
-                  'assets/images/$image',
-                  width: 200,
-                  height: 200,
-                ),
+                child: Image.asset('assets/images/$image', semanticLabel: imageAlt),
               ),
-            const SizedBox(height: 20),
-            Text(
-              reactionTitle,
-              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              summary,
-              style: const TextStyle(fontSize: 16),
-            ),
-            const SizedBox(height: 20),
-            const Text(
-              "Co warto zapamiętać:",
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-            ),
+            const SizedBox(height: 16),
+            Text(summary, style: const TextStyle(fontSize: 18)),
             const SizedBox(height: 8),
-            Text(
-              advice,
-              style: const TextStyle(fontSize: 16),
-            ),
+            Text(advice, style: const TextStyle(fontSize: 16)),
             const Spacer(),
-            Center(
-              child: ElevatedButton(
-                onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
-                child: const Text("Powrót do menu"),
+            SizedBox(
+              width: double.infinity,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (widget.suggestRandom) ...[
+                    ElevatedButton.icon(
+                      onPressed: () {
+                        ClickSounds.play();
+                        Navigator.of(context).pushNamedAndRemoveUntil(
+                          '/simulation-mode',
+                          (r) => false,
+                          arguments: { 'autoStart': true },
+                        );
+                      },
+                      icon: const Icon(Icons.casino),
+                      label: const Text('Losuj kolejną'),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
+                  ElevatedButton(
+                    onPressed: () {
+                      ClickSounds.play();
+                      Navigator.of(context).pushNamedAndRemoveUntil('/menu', (r) => false);
+                    },
+                    child: const Text('Wróć do menu'),
+                  ),
+                ],
               ),
-            ),
+            )
           ],
         ),
       ),
