@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
-// services not needed directly here
 import 'scenario.dart';
 import 'summary.dart';
 import '../click_sounds.dart';
 import '../haptics.dart';
 import '../progress.dart';
 import 'package:provider/provider.dart';
+import '../services/tts_service.dart';
+import '../accessibility_settings.dart';
 
 class SimulationWebScreen extends StatefulWidget {
   final Scenario scenario;
@@ -20,6 +21,7 @@ class SimulationWebScreen extends StatefulWidget {
 class _SimulationWebScreenState extends State<SimulationWebScreen> {
   late final AudioPlayer _player;
   Map<String, dynamic>? _node; // multi-step state
+  bool _ttsSpeaking = false;
 
   @override
   void initState() {
@@ -31,10 +33,12 @@ class _SimulationWebScreenState extends State<SimulationWebScreen> {
     if (widget.scenario.vibration) {
       Haptics.notify(context);
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeSpeakCurrent());
   }
 
   @override
   void dispose() {
+    TtsService.instance.stop();
     _player.stop();
     _player.dispose();
     super.dispose();
@@ -76,7 +80,39 @@ class _SimulationWebScreenState extends State<SimulationWebScreen> {
         children: [
           SafeArea(
             bottom: false,
-            child: _BrowserBar(host: host, url: url?.toString() ?? content),
+            child: Consumer<A11ySettings>(
+              builder: (_, s, __) {
+                return _BrowserBar(
+                  host: host,
+                  url: url?.toString() ?? content,
+                  trailing: [
+                    IconButton(
+                      tooltip: !s.ttsEnabled
+                          ? 'Włącz TTS i czytaj na głos'
+                          : (_ttsSpeaking ? 'Zatrzymaj czytanie' : 'Czytaj na głos'),
+                      icon: Icon(!s.ttsEnabled
+                          ? Icons.volume_up_outlined
+                          : (_ttsSpeaking ? Icons.stop : Icons.volume_up)),
+                      onPressed: () async {
+                        if (!s.ttsEnabled) {
+                          s.update((x) => x.ttsEnabled = true);
+                          await _maybeSpeakCurrent();
+                          return;
+                        }
+                        if (_ttsSpeaking) {
+                          await TtsService.instance.stop();
+                          if (mounted) setState(() => _ttsSpeaking = false);
+                        } else {
+                          final text = _ttsTextFor(content);
+                          await _speakText(text);
+                        }
+                      },
+                    ),
+                    IconButton(onPressed: () { ClickSounds.play(); Haptics.tap(context); }, icon: const Icon(Icons.more_vert)),
+                  ],
+                );
+              },
+            ),
           ),
           Expanded(
             child: SingleChildScrollView(
@@ -172,6 +208,7 @@ class _SimulationWebScreenState extends State<SimulationWebScreen> {
                               await _player.play(AssetSource('audio/' + f));
                             }
                             Haptics.notify(context);
+                            _maybeSpeakCurrent();
                           }
                         },
                         label: Text(label),
@@ -207,10 +244,35 @@ extension on _SimulationWebScreenState {
   }
 }
 
+extension ttsHelpers on _SimulationWebScreenState {
+  String _ttsTextFor(String fallbackMsg) {
+    final nodeTts = _node?['ttsText']?.toString();
+    if (nodeTts != null && nodeTts.isNotEmpty) return nodeTts;
+    final a11y = widget.scenario.a11y ?? const {};
+    final scenTts = a11y['ttsText']?.toString();
+    if (scenTts != null && scenTts.isNotEmpty) return scenTts;
+    return fallbackMsg;
+  }
+
+  Future<void> _maybeSpeakCurrent() async {
+    final s = Provider.of<A11ySettings>(context, listen: false);
+    if (!s.ttsEnabled) return;
+    final content = (_node != null ? (_node!['prompt']?.toString() ?? '') : null) ?? (widget.scenario.content ?? '');
+    await _speakText(_ttsTextFor(content));
+  }
+
+  Future<void> _speakText(String text) async {
+    final s = Provider.of<A11ySettings>(context, listen: false);
+    await TtsService.instance.speak(text, rate: s.ttsRate, volume: s.ttsVolume, language: 'pl-PL');
+    if (mounted) setState(() => _ttsSpeaking = true);
+  }
+}
+
 class _BrowserBar extends StatelessWidget {
   final String host;
   final String url;
-  const _BrowserBar({required this.host, required this.url});
+  final List<Widget>? trailing;
+  const _BrowserBar({required this.host, required this.url, this.trailing});
 
   @override
   Widget build(BuildContext context) {
@@ -246,9 +308,12 @@ class _BrowserBar extends StatelessWidget {
               ),
             ),
           ),
-          IconButton(onPressed: () { ClickSounds.play(); Haptics.tap(context); }, icon: const Icon(Icons.more_vert)),
+          ...(trailing ?? [
+            IconButton(onPressed: () { ClickSounds.play(); Haptics.tap(context); }, icon: const Icon(Icons.more_vert))
+          ]),
         ],
       ),
     );
   }
 }
+

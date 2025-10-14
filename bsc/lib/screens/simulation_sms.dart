@@ -7,6 +7,8 @@ import '../click_sounds.dart';
 import '../haptics.dart';
 import '../progress.dart';
 import 'package:provider/provider.dart';
+import '../services/tts_service.dart';
+import '../accessibility_settings.dart';
 
 class SimulationSmsScreen extends StatefulWidget {
   final Scenario scenario;
@@ -20,21 +22,37 @@ class SimulationSmsScreen extends StatefulWidget {
 class _SimulationSmsScreenState extends State<SimulationSmsScreen> {
   late final AudioPlayer _player;
   Map<String, dynamic>? _node; // multi-step state
+  bool _ttsSpeaking = false;
+  bool _awaitAfterSound = false;
 
   @override
   void initState() {
     super.initState();
     _player = AudioPlayer();
+    _player.onPlayerComplete.listen((event) async {
+      if (!mounted) return;
+      if (_awaitAfterSound) {
+        _awaitAfterSound = false;
+        await _maybeSpeakCurrent();
+      }
+    });
     final sound = widget.scenario.sound ?? 'sms_alert.mp3';
     _player.setReleaseMode(ReleaseMode.stop);
+    _awaitAfterSound = true;
     _player.play(AssetSource('audio/$sound'));
     if (widget.scenario.vibration) {
       Haptics.notify(context);
     }
+    // Optionally speak the message after first frame
+    // If there was no sound, speak after first frame fallback
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (!_awaitAfterSound) await _maybeSpeakCurrent();
+    });
   }
 
   @override
   void dispose() {
+    TtsService.instance.stop();
     _player.stop();
     _player.dispose();
     super.dispose();
@@ -80,8 +98,34 @@ class _SimulationSmsScreenState extends State<SimulationSmsScreen> {
             Text('SMS', style: theme.textTheme.bodySmall),
           ],
         ),
-        actions: const [
-          Padding(padding: EdgeInsets.only(right: 8), child: Icon(Icons.more_vert)),
+        actions: [
+          Consumer<A11ySettings>(
+            builder: (_, s, __) {
+              return IconButton(
+                tooltip: !s.ttsEnabled
+                    ? 'Włącz TTS i czytaj na głos'
+                    : (_ttsSpeaking ? 'Zatrzymaj czytanie' : 'Czytaj na głos'),
+                icon: Icon(!s.ttsEnabled
+                    ? Icons.volume_up_outlined
+                    : (_ttsSpeaking ? Icons.stop : Icons.volume_up)),
+                onPressed: () async {
+                  if (!s.ttsEnabled) {
+                    s.update((x) => x.ttsEnabled = true);
+                    await _maybeSpeakCurrent();
+                    return;
+                  }
+                  if (_ttsSpeaking) {
+                    await TtsService.instance.stop();
+                    if (mounted) setState(() => _ttsSpeaking = false);
+                  } else {
+                    final msgText = (_node != null ? (_node!['prompt']?.toString() ?? '') : null) ?? (widget.scenario.content ?? '');
+                    await _speakText(_ttsTextFor(msgText));
+                  }
+                },
+              );
+            },
+          ),
+          const Padding(padding: EdgeInsets.only(right: 8), child: Icon(Icons.more_vert)),
         ],
       ),
       body: Column(
@@ -227,9 +271,13 @@ class _SimulationSmsScreenState extends State<SimulationSmsScreen> {
                             if (f != null && f.isNotEmpty) {
                               await _player.stop();
                               _player.setReleaseMode(ReleaseMode.stop);
+                              _awaitAfterSound = true;
                               await _player.play(AssetSource('audio/' + f));
                             }
                             Haptics.notify(context);
+                          if (f == null || f.isEmpty) {
+                            await _maybeSpeakCurrent();
+                          }
                           }
                         },
                         label: Text(label),
@@ -272,5 +320,37 @@ class _SimulationSmsScreenState extends State<SimulationSmsScreen> {
       return v.map((e) => Map<String, dynamic>.from(e)).toList();
     }
     return widget.scenario.choices;
+  }
+
+  // --- TTS helpers ---
+  String _ttsTextFor(String fallbackMsg) {
+    final nodeTts = _node?['ttsText']?.toString();
+    if (nodeTts != null && nodeTts.isNotEmpty) return nodeTts;
+    final a11y = widget.scenario.a11y ?? const {};
+    final scenTts = a11y['ttsText']?.toString();
+    if (scenTts != null && scenTts.isNotEmpty) return scenTts;
+    final opts = _currentChoices();
+    if (opts.isNotEmpty) {
+      final labels = <String>[];
+      for (var i = 0; i < opts.length; i++) {
+        final label = (opts[i]['label'] ?? opts[i]['text'] ?? 'Wybierz').toString();
+        labels.add('${i + 1}. $label');
+      }
+      return '$fallbackMsg. Opcje: ${labels.join(', ')}';
+    }
+    return fallbackMsg;
+  }
+
+  Future<void> _maybeSpeakCurrent() async {
+    final s = Provider.of<A11ySettings>(context, listen: false);
+    if (!s.ttsEnabled) return;
+    final msg = (_node != null ? (_node!['prompt']?.toString() ?? '') : null) ?? (widget.scenario.content ?? '');
+    await _speakText(_ttsTextFor(msg));
+  }
+
+  Future<void> _speakText(String text) async {
+    final s = Provider.of<A11ySettings>(context, listen: false);
+    await TtsService.instance.speak(text, rate: s.ttsRate, volume: s.ttsVolume, language: 'pl-PL');
+    if (mounted) setState(() => _ttsSpeaking = true);
   }
 }

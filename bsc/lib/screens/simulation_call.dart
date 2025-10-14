@@ -7,6 +7,8 @@ import '../click_sounds.dart';
 import '../haptics.dart';
 import '../progress.dart';
 import 'package:provider/provider.dart';
+import '../services/tts_service.dart';
+import '../accessibility_settings.dart';
 
 class SimulationCallScreen extends StatefulWidget {
   final Scenario scenario;
@@ -24,11 +26,22 @@ class _SimulationCallScreenState extends State<SimulationCallScreen> {
   String? _avatar;
   String? _speechFile;
   Map<String, dynamic>? _node; // multi-step state
+  bool _awaitOptionsAfterAudio = false;
 
   @override
   void initState() {
     super.initState();
     _player = AudioPlayer();
+    _player.onPlayerComplete.listen((event) async {
+      if (!mounted) return;
+      if (_inCall && _awaitOptionsAfterAudio) {
+        _awaitOptionsAfterAudio = false;
+        final s = Provider.of<A11ySettings>(context, listen: false);
+        if (s.ttsEnabled) {
+          await _speakCurrentOptions();
+        }
+      }
+    });
     final sound = widget.scenario.sound ?? 'ringtone.mp3';
     _player.setReleaseMode(ReleaseMode.loop);
     _player.play(AssetSource('audio/$sound'));
@@ -37,7 +50,7 @@ class _SimulationCallScreenState extends State<SimulationCallScreen> {
     }
     final caller = widget.scenario.caller ?? const {};
     _avatar = caller['avatar']?.toString();
-    _speechFile = widget.scenario.voice ?? 'call_voice.mp3';
+    _speechFile = widget.scenario.voice; // when null, we'll use TTS
     if (_avatar != null) {
       rootBundle
           .load('assets/images/$_avatar')
@@ -61,7 +74,15 @@ class _SimulationCallScreenState extends State<SimulationCallScreen> {
     final f = _speechFile;
     if (f != null && f.isNotEmpty) {
       _player.setReleaseMode(ReleaseMode.stop);
+      _awaitOptionsAfterAudio = true;
       await _player.play(AssetSource('audio/' + f));
+    } else {
+      final s = Provider.of<A11ySettings>(context, listen: false);
+      if (s.ttsEnabled) {
+        final base = widget.scenario.dialogue ?? '';
+        final text = _composeDialogueWithOptions(base);
+        await TtsService.instance.speak(text, rate: s.ttsRate, volume: s.ttsVolume, language: 'pl-PL');
+      }
     }
   }
 
@@ -139,7 +160,16 @@ class _SimulationCallScreenState extends State<SimulationCallScreen> {
                       if (vf != null && vf.isNotEmpty) {
                         await _player.stop();
                         _player.setReleaseMode(ReleaseMode.stop);
+                        _awaitOptionsAfterAudio = true;
                         await _player.play(AssetSource('audio/' + vf));
+                      } else {
+                        final s = Provider.of<A11ySettings>(context, listen: false);
+                        if (s.ttsEnabled) {
+                          final text = _composeDialogueWithOptions((_node?['prompt']?.toString() ?? '').trim());
+                          if (text.isNotEmpty) {
+                            await TtsService.instance.speak(text, rate: s.ttsRate, volume: s.ttsVolume, language: 'pl-PL');
+                          }
+                        }
                       }
                       Haptics.notify(context);
                     }
@@ -346,5 +376,31 @@ extension on _SimulationCallScreenState {
       return v.map((e) => Map<String, dynamic>.from(e)).toList();
     }
     return widget.scenario.choices;
+  }
+
+  String _optionsText() {
+    final choices = _currentChoices();
+    if (choices.isEmpty) return '';
+    final labels = <String>[];
+    for (var i = 0; i < choices.length; i++) {
+      final label = (choices[i]['text'] ?? choices[i]['label'] ?? 'Wybierz').toString();
+      labels.add('${i + 1}. $label');
+    }
+    return 'Opcje: ${labels.join(', ')}';
+  }
+
+  String _composeDialogueWithOptions(String dialogue) {
+    final opts = _optionsText();
+    if (opts.isEmpty) return dialogue;
+    if (dialogue.trim().isEmpty) return opts;
+    return '$dialogue. $opts';
+  }
+
+  Future<void> _speakCurrentOptions() async {
+    final s = Provider.of<A11ySettings>(context, listen: false);
+    final text = _optionsText();
+    if (text.isNotEmpty) {
+      await TtsService.instance.speak(text, rate: s.ttsRate, volume: s.ttsVolume, language: 'pl-PL');
+    }
   }
 }

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:audioplayers/audioplayers.dart';
 import '../click_sounds.dart';
 import '../haptics.dart';
+import 'package:provider/provider.dart';
+import '../accessibility_settings.dart';
+import '../services/tts_service.dart';
 
 class SummaryScreen extends StatefulWidget {
   final Map<String, dynamic> outcome;
@@ -14,12 +17,20 @@ class SummaryScreen extends StatefulWidget {
 
 class _SummaryScreenState extends State<SummaryScreen> {
   late final AudioPlayer _player;
+  bool _ttsSpoken = false;
 
   @override
   void initState() {
     super.initState();
     _player = AudioPlayer();
-    _playOutcomeSound();
+    _player.onPlayerComplete.listen((event) async {
+      if (!mounted) return;
+      await _maybeSpeakSummary();
+    });
+    _playOutcomeSound().then((_) {
+      // If there was no sound, speak summary right away
+      WidgetsBinding.instance.addPostFrameCallback((_) => _maybeSpeakSummary());
+    });
   }
 
   Future<void> _playOutcomeSound() async {
@@ -53,6 +64,7 @@ class _SummaryScreenState extends State<SummaryScreen> {
 
   @override
   void dispose() {
+    TtsService.instance.stop();
     _player.stop();
     _player.dispose();
     super.dispose();
@@ -116,5 +128,18 @@ class _SummaryScreenState extends State<SummaryScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _maybeSpeakSummary() async {
+    if (_ttsSpoken) return;
+    final s = Provider.of<A11ySettings>(context, listen: false);
+    if (!s.ttsEnabled) return;
+    final title = widget.outcome['title']?.toString() ?? 'Podsumowanie';
+    final summary = widget.outcome['summary']?.toString() ?? '';
+    final advice = widget.outcome['advice']?.toString() ?? '';
+    final text = [title, summary, advice].where((e) => e.trim().isNotEmpty).join('. ');
+    if (text.isEmpty) return;
+    await TtsService.instance.speak(text, rate: s.ttsRate, volume: s.ttsVolume, language: 'pl-PL');
+    _ttsSpoken = true;
   }
 }
