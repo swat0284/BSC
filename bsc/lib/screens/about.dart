@@ -79,6 +79,51 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
 
+              // Banery logotypów partnerów i UE
+              Card(
+                clipBehavior: Clip.antiAlias,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Image.asset(
+                      'assets/images/partners_banner.png',
+                      fit: BoxFit.fitWidth,
+                      semanticLabel: 'Belka logotypów partnerów',
+                      errorBuilder: (context, error, stack) => const SizedBox.shrink(),
+                    ),
+                    const Divider(height: 1),
+                    InkWell(
+                      onTap: () { ClickSounds.play(); Haptics.tap(context); _launchUrl('https://www.rozwojspoleczny.gov.pl/strony/dowiedz-sie-wiecej-o-programie/promocja-programu/'); },
+                      child: Image.asset(
+                        'assets/images/eu_banner.jpg',
+                        fit: BoxFit.fitWidth,
+                        semanticLabel: 'Belka logotypów UE',
+                        errorBuilder: (context, error, stack) => const SizedBox.shrink(),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // Informacja o dotacji / innowacjach społecznych ROPS
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text('Informacja o dofinansowaniu', style: TextStyle(fontWeight: FontWeight.w700)),
+                      SizedBox(height: 8),
+                      Text(
+                        'Projekt realizowany przy wsparciu Regionalnego Ośrodka Polityki Społecznej (ROPS) '
+                        'w obszarze Innowacji Społecznych. Materiały powstały w ramach działań współfinansowanych '
+                        'ze środków Unii Europejskiej w programie FERS 2021–2027.',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
               const SizedBox(height: 12),
               Card(
                 child: Padding(

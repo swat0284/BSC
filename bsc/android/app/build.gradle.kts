@@ -1,3 +1,6 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("kotlin-android")
@@ -31,11 +34,45 @@ android {
         versionName = flutter.versionName
     }
 
+    // Load release signing configuration from key.properties if present
+    val keystoreProperties = Properties()
+    val keystorePropertiesFile = rootProject.file("key.properties")
+    if (keystorePropertiesFile.exists()) {
+        FileInputStream(keystorePropertiesFile).use { fis ->
+            keystoreProperties.load(fis)
+        }
+    }
+    val hasReleaseKeystore: Boolean = run {
+        val path = (keystoreProperties["storeFile"] ?: "").toString()
+        if (path.isBlank()) false else file(path).exists()
+    }
+
+    signingConfigs {
+        create("release") {
+            if (hasReleaseKeystore) {
+                storeFile = file(keystoreProperties["storeFile"] ?: "")
+                storePassword = (keystoreProperties["storePassword"] ?: "").toString()
+                keyAlias = (keystoreProperties["keyAlias"] ?: "").toString()
+                keyPassword = (keystoreProperties["keyPassword"] ?: "").toString()
+            }
+        }
+    }
+
     buildTypes {
         release {
-            // TODO: Add your own signing config for the release build.
-            // Signing with the debug keys for now, so `flutter run --release` works.
-            signingConfig = signingConfigs.getByName("debug")
+            // Use release signing if provided, otherwise fall back to debug keystore for local builds
+            signingConfig = if (hasReleaseKeystore) {
+                signingConfigs.getByName("release")
+            } else {
+                signingConfigs.getByName("debug")
+            }
+            // Disable resource shrinking unless code shrinking (R8) is enabled
+            isMinifyEnabled = false
+            isShrinkResources = false
+        }
+        debug {
+            // Ensure debug builds also do not attempt resource shrinking
+            isShrinkResources = false
         }
     }
 }
