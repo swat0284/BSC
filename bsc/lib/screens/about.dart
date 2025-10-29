@@ -105,7 +105,7 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
 
-              // Informacja o dotacji / innowacjach społecznych ROPS
+              // Informacja o dotacji / innowacjach społecznych ROPS (pełna formuła)
               Card(
                 child: Padding(
                   padding: const EdgeInsets.all(16),
@@ -115,9 +115,57 @@ class AboutScreen extends StatelessWidget {
                       Text('Informacja o dofinansowaniu', style: TextStyle(fontWeight: FontWeight.w700)),
                       SizedBox(height: 8),
                       Text(
-                        'Projekt realizowany przy wsparciu Regionalnego Ośrodka Polityki Społecznej (ROPS) '
-                        'w obszarze Innowacji Społecznych. Materiały powstały w ramach działań współfinansowanych '
-                        'ze środków Unii Europejskiej w programie FERS 2021–2027.',
+                        'Projekt jest realizowany w ramach V Osi Priorytetowej programu Fundusze Europejskie dla Rozwoju Społecznego 2021-2027 '
+                        '(Działanie 5.1: Innowacje społeczne) współfinansowanego ze środków Europejskiego Funduszu Społecznego+, '
+                        'na zlecenie Ministerstwa Funduszy i Polityki Regionalnej.',
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Licencja CC BY 4.0
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Licencja materiałów', style: TextStyle(fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 8),
+                      Row(
+                        children: [
+                          Image.asset(
+                            'assets/images/cc_by_4.0.png',
+                            height: 32,
+                            fit: BoxFit.contain,
+                            semanticLabel: 'Licencja Creative Commons Uznanie autorstwa 4.0 (CC BY 4.0)',
+                            errorBuilder: (context, error, stack) => const SizedBox(),
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'Materiały (o ile nie zaznaczono inaczej) udostępniane są na licencji CC BY 4.0.',
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 4,
+                        children: [
+                          TextButton.icon(
+                            onPressed: () { ClickSounds.play(); Haptics.tap(context); _launchUrl('https://creativecommons.org/licenses/by/4.0/deed.pl'); },
+                            icon: const Icon(Icons.link),
+                            label: const Text('Skrót treści licencji'),
+                          ),
+                          TextButton.icon(
+                            onPressed: () { ClickSounds.play(); Haptics.tap(context); _launchUrl('https://creativecommons.org/licenses/by/4.0/legalcode.pl'); },
+                            icon: const Icon(Icons.description_outlined),
+                            label: const Text('Pełna treść licencji'),
+                          ),
+                        ],
                       ),
                     ],
                   ),
