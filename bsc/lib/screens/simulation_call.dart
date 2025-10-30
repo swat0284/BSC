@@ -88,7 +88,8 @@ class _SimulationCallScreenState extends State<SimulationCallScreen> {
 
   Future<void> _declineCall() async {
     await _player.stop();
-    final key = widget.scenario.onDeclineOutcome;
+    String? key = widget.scenario.onDeclineOutcome;
+    key ??= widget.scenario.outcomes.containsKey('safe_reaction') ? 'safe_reaction' : null;
     final outcome = key == null ? null : widget.scenario.outcomes[key] as Map<String, dynamic>?;
     if (!mounted) return;
     Navigator.push(
@@ -109,6 +110,15 @@ class _SimulationCallScreenState extends State<SimulationCallScreen> {
         builder: (_) => SummaryScreen(outcome: outcome ?? _neutralOutcome()),
       ),
     );
+  }
+
+  Future<void> _endCallToSafeReaction() async {
+    // Treat ending the call as a safe reaction in call scenarios
+    final outcome = widget.scenario.outcomes['safe_reaction'] as Map<String, dynamic>?;
+    final reaction = outcome?['reaction']?.toString() ?? 'bezpieczna';
+    Haptics.outcome(context, reaction);
+    Provider.of<Progress>(context, listen: false).award(reaction);
+    await _goToOutcome('safe_reaction');
   }
 
   Map<String, dynamic> _neutralOutcome() => {
@@ -144,7 +154,7 @@ class _SimulationCallScreenState extends State<SimulationCallScreen> {
                   number: number,
                   dialogue: (_node != null ? (_node!['prompt']?.toString() ?? '') : null) ?? dialogue,
                   hint: _node?['hint']?.toString(),
-                  onEnd: _declineCall,
+                  onEnd: _endCallToSafeReaction,
                   onChoice: (c) async {
                     final outcomeKey = c['outcome'] as String?;
                     final next = c['next'];

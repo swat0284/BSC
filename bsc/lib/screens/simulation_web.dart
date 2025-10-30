@@ -316,4 +316,3 @@ class _BrowserBar extends StatelessWidget {
     );
   }
 }
-

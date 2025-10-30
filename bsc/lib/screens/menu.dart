@@ -33,13 +33,27 @@ class MenuScreen extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  "Menu główne",
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
+                Row(
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back, color: Colors.white),
+                      tooltip: 'Wstecz',
+                      onPressed: () {
+                        ClickSounds.play();
+                        Haptics.tap(context);
+                        Navigator.pop(context);
+                      },
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      "Menu główne",
+                      style: TextStyle(
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
 

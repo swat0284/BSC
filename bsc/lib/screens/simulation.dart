@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'scenario.dart';
+import '../click_sounds.dart';
+import '../haptics.dart';
 import 'scenario_detail.dart';
 
 
@@ -17,7 +19,20 @@ class _SimulationScreenState extends State<SimulationScreen> {
 @override
 Widget build(BuildContext context) {
 return Scaffold(
-appBar: AppBar(title: const Text('Symulacje')),
+appBar: AppBar(
+  title: const Text('Symulacje'),
+  actions: [
+    IconButton(
+      tooltip: 'Menu',
+      icon: const Icon(Icons.home),
+      onPressed: () {
+        ClickSounds.play();
+        Haptics.tap(context);
+        Navigator.of(context).pushNamedAndRemoveUntil('/menu', (r) => false);
+      },
+    ),
+  ],
+),
 body: ListView.separated(
 itemCount: widget.scenarios.length,
 separatorBuilder: (_, __) => const Divider(height: 1),

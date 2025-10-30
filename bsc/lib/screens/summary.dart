@@ -5,6 +5,9 @@ import '../haptics.dart';
 import 'package:provider/provider.dart';
 import '../accessibility_settings.dart';
 import '../services/tts_service.dart';
+import 'package:flutter/services.dart';
+import 'simulation.dart';
+import 'scenario.dart';
 
 class SummaryScreen extends StatefulWidget {
   final Map<String, dynamic> outcome;
@@ -114,6 +117,16 @@ class _SummaryScreenState extends State<SummaryScreen> {
                     ),
                     const SizedBox(height: 8),
                   ],
+                  if (!widget.suggestRandom) ...[
+                    ElevatedButton(
+                      onPressed: () async {
+                        ClickSounds.play();
+                        await _backToScenarios();
+                      },
+                      child: const Text('Wróć do listy scenariuszy'),
+                    ),
+                    const SizedBox(height: 8),
+                  ],
                   ElevatedButton(
                     onPressed: () {
                       ClickSounds.play();
@@ -141,5 +154,22 @@ class _SummaryScreenState extends State<SummaryScreen> {
     if (text.isEmpty) return;
     await TtsService.instance.speak(text, rate: s.ttsRate, volume: s.ttsVolume, language: 'pl-PL');
     _ttsSpoken = true;
+  }
+
+  Future<void> _backToScenarios() async {
+    try {
+      final jsonStr = await rootBundle.loadString('assets/data/scenarios.json');
+      final scenarios = Scenario.listFromJsonString(jsonStr);
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => SimulationScreen(scenarios: scenarios)),
+        (r) => false,
+      );
+    } catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Nie udało się wczytać scenariuszy')),
+      );
+    }
   }
 }

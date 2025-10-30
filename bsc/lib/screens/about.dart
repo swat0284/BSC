@@ -79,31 +79,7 @@ class AboutScreen extends StatelessWidget {
                 ),
               ),
 
-              // Banery logotypów partnerów i UE
-              Card(
-                clipBehavior: Clip.antiAlias,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Image.asset(
-                      'assets/images/partners_banner.png',
-                      fit: BoxFit.fitWidth,
-                      semanticLabel: 'Belka logotypów partnerów',
-                      errorBuilder: (context, error, stack) => const SizedBox.shrink(),
-                    ),
-                    const Divider(height: 1),
-                    InkWell(
-                      onTap: () { ClickSounds.play(); Haptics.tap(context); _launchUrl('https://www.rozwojspoleczny.gov.pl/strony/dowiedz-sie-wiecej-o-programie/promocja-programu/'); },
-                      child: Image.asset(
-                        'assets/images/eu_banner.jpg',
-                        fit: BoxFit.fitWidth,
-                        semanticLabel: 'Belka logotypów UE',
-                        errorBuilder: (context, error, stack) => const SizedBox.shrink(),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+              // (przeniesione na dół) belki logotypów będą wyświetlone po treści
 
               // Informacja o dotacji / innowacjach społecznych ROPS (pełna formuła)
               Card(
@@ -120,6 +96,21 @@ class AboutScreen extends StatelessWidget {
                         'na zlecenie Ministerstwa Funduszy i Polityki Regionalnej.',
                       ),
                     ],
+                  ),
+                ),
+              ),
+
+              // Belka logotypów UE – bezpośrednio po informacji o dofinansowaniu
+              const SizedBox(height: 8),
+              Card(
+                clipBehavior: Clip.antiAlias,
+                child: InkWell(
+                  onTap: () { ClickSounds.play(); Haptics.tap(context); _launchUrl('https://www.rozwojspoleczny.gov.pl/strony/dowiedz-sie-wiecej-o-programie/promocja-programu/'); },
+                  child: Image.asset(
+                    'assets/images/eu_banner.jpg',
+                    fit: BoxFit.fitWidth,
+                    semanticLabel: 'Belka logotypów UE',
+                    errorBuilder: (context, error, stack) => const SizedBox.shrink(),
                   ),
                 ),
               ),
@@ -184,6 +175,20 @@ class AboutScreen extends StatelessWidget {
                   ),
                 ),
               ),
+
+              // Belka logotypów realizatorów (partnerzy) – na dole
+              const SizedBox(height: 12),
+              Card(
+                clipBehavior: Clip.antiAlias,
+                child: Image.asset(
+                  'assets/images/partners_banner.png',
+                  fit: BoxFit.fitWidth,
+                  semanticLabel: 'Belka logotypów partnerów',
+                  errorBuilder: (context, error, stack) => const SizedBox.shrink(),
+                ),
+              ),
+
+              // (EU belka przeniesiona powyżej, tu usunięta)
             ],
           ),
         );
